@@ -1,0 +1,14 @@
+{
+  "name": "arc-all-random-challenge",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n api,ui -c blue,green \"npm:dev:server\" \"npm:dev:ui\"",
+    "dev:ui": "npm --prefix ui run dev -- --host 0.0.0.0",
+    "dev:server": "npm --prefix server run dev",
+    "build": "npm --prefix ui run build",
+    "start:server": "npm --prefix server start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
