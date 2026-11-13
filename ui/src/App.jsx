@@ -12,11 +12,11 @@ const champions = [
 ];
 
 const runes = {
-  precision: { name: "정밀", mark: "✦", color: "#e9c34e", keystone: ["정복자", "기민한 발놀림", "집중 공격"], primary: ["승전보", "침착", "과다치유", "최후의 일격", "최후의 저항", "체력차 극복"] },
-  domination: { name: "지배", mark: "◈", color: "#d84b4b", keystone: ["감전", "어둠의 수확", "칼날비"], primary: ["비열한 한 방", "피의 맛", "돌발 일격", "보물 사냥꾼", "궁극의 사냥꾼", "끈질긴 사냥꾼"] },
-  sorcery: { name: "마법", mark: "✧", color: "#44a9d8", keystone: ["콩콩이 소환", "신비로운 유성", "난입"], primary: ["마나순환 팔찌", "빛의 망토", "깨달음", "폭풍의 결집", "주문 작열", "물 위를 걷는 자"] },
-  resolve: { name: "결의", mark: "⬟", color: "#4cbb91", keystone: ["착취의 손아귀", "여진", "수호자"], primary: ["철거", "생명의 샘", "사전 준비", "과잉성장", "불굴의 의지", "재생의 바람"] },
-  inspiration: { name: "영감", mark: "❋", color: "#69c6bc", keystone: ["빙결 강화", "봉인 풀린 주문서", "선제공격"], primary: ["마법의 신발", "비스킷 배달", "우주적 통찰력", "미니언 해체분석기", "시간 왜곡 물약", "삼중 물약"] },
+  precision: { name: "정밀", mark: "✦", color: "#e9c34e", keystone: ["정복자", "기민한 발놀림", "집중 공격"], primaryRows: [["승전보", "침착"], ["과다치유", "최후의 일격"], ["최후의 저항", "체력차 극복"]] },
+  domination: { name: "지배", mark: "◈", color: "#d84b4b", keystone: ["감전", "어둠의 수확", "칼날비"], primaryRows: [["비열한 한 방", "피의 맛"], ["돌발 일격", "보물 사냥꾼"], ["궁극의 사냥꾼", "끈질긴 사냥꾼"]] },
+  sorcery: { name: "마법", mark: "✧", color: "#44a9d8", keystone: ["콩콩이 소환", "신비로운 유성", "난입"], primaryRows: [["마나순환 팔찌", "빛의 망토"], ["깨달음", "폭풍의 결집"], ["주문 작열", "물 위를 걷는 자"]] },
+  resolve: { name: "결의", mark: "⬟", color: "#4cbb91", keystone: ["착취의 손아귀", "여진", "수호자"], primaryRows: [["철거", "생명의 샘"], ["사전 준비", "과잉성장"], ["불굴의 의지", "재생의 바람"]] },
+  inspiration: { name: "영감", mark: "❋", color: "#69c6bc", keystone: ["빙결 강화", "봉인 풀린 주문서", "선제공격"], primaryRows: [["마법의 신발", "비스킷 배달"], ["우주적 통찰력", "미니언 해체분석기"], ["시간 왜곡 물약", "삼중 물약"]] },
 };
 
 const shardOptions = [
@@ -126,9 +126,8 @@ function App() {
           <div>
             <div className="eyebrow"><span className="live-dot" /> YOUR RANDOM CHALLENGE</div>
             <h1>{page === "home" ? "빌드" : "새로운 빌드 만들기"}</h1>
-            <p>{page === "home" ? "오늘은 어떤 조합으로 플레이해 볼까요?" : "챔피언과 룬을 조합해 나만의 도전을 완성해 보세요."}</p>
+            <p>{page === "home" ? "당신의 오늘의 행운은?" : "챔피언과 룬을 조합해 나만의 도전을 완성해 보세요."}</p>
           </div>
-          <span className="prototype-chip"><span /> 프로토타입 · 브라우저 임시 저장</span>
         </div>
         {page === "home" ? (
           <HomePage
@@ -156,9 +155,9 @@ function App() {
 function Header({ page, setPage, darkMode, setDarkMode }) {
   return (
     <header className="topbar">
-      <button className="brand" onClick={() => setPage("home")} aria-label="ARC 메인 화면">
-        <span className="brand-mark"><span /><span /><span /></span>
-        <span className="brand-copy"><strong>ARC</strong><small>ALL RANDOM CHALLENGE</small></span>
+      <button className="brand" onClick={() => setPage("home")} aria-label="All Random Challenge 메인 화면">
+        <img className="brand-icon" src="/arc-icon.png" alt="" />
+        <span className="brand-copy"><strong>All Random Challenge</strong></span>
       </button>
       {page === "roulette" && <button className="nav-link active back-link" onClick={() => setPage("home")}>← 빌드</button>}
       <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)} aria-label={darkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}>
@@ -171,9 +170,7 @@ function Header({ page, setPage, darkMode, setDarkMode }) {
 function HomePage({ builds, selectedBuild, selectedId, setSelectedId, onDelete, onCreate, onNotify }) {
   return (
     <>
-      {selectedBuild ? (
-        <BuildDetail build={selectedBuild} onDelete={onDelete} onNotify={onNotify} />
-      ) : (
+      {!builds.length && (
         <section className="empty-detail">
           <div className="empty-icon">✦</div>
           <h2>아직 저장한 빌드가 없어요</h2>
@@ -192,6 +189,8 @@ function HomePage({ builds, selectedBuild, selectedId, setSelectedId, onDelete, 
                 index={index}
                 selected={build.id === (selectedBuild?.id ?? selectedId)}
                 onClick={() => setSelectedId(build.id)}
+                onDelete={onDelete}
+                onNotify={onNotify}
               />
             ))}
           </div>
@@ -221,7 +220,7 @@ function BuildDetail({ build, onDelete, onNotify }) {
   }
 
   return (
-    <section className="detail-card" id="build-export-card">
+    <section className="detail-card expanded-detail" id="build-export-card">
       <div className="detail-main">
         <div className="champion-showcase" style={{ "--champ-accent": champ.accent }}>
           <div className="champion-orbit" />
@@ -254,7 +253,7 @@ function BuildDetail({ build, onDelete, onNotify }) {
           </div>
         </div>
       </div>
-      <div className="detail-meta"><span><span className="save-dot" /> 보관된 빌드 <span className="meta-divider">·</span> {build.date || "방금 전"}</span><span>빌드 상세 정보 <b>↗</b></span></div>
+      <div className="detail-meta"><span><span className="save-dot" /> 빌드 <span className="meta-divider">·</span> {build.date || "방금 전"}</span><span>빌드 상세 정보 <b>↗</b></span></div>
     </section>
   );
 }
@@ -270,11 +269,12 @@ function RunePath({ path, keystone, choices = [], secondaryPath = false }) {
   );
 }
 
-function BuildRow({ build, index, selected, onClick }) {
+function BuildRow({ build, index, selected, onClick, onDelete, onNotify }) {
   const champ = championInfo(build.champion);
   const path = runes[build.path] || runes.precision;
   const secondary = runes[build.secondary] || runes.inspiration;
   return (
+    <div className={selected ? "build-entry expanded" : "build-entry"}>
     <button className={selected ? "build-row selected" : "build-row"} onClick={onClick} aria-pressed={selected}>
       <span className="row-champion">
         <ChampionImage champion={champ} className="row-avatar" />
@@ -284,6 +284,8 @@ function BuildRow({ build, index, selected, onClick }) {
       <span className="row-lane">{build.lane ? <LaneMap lane={build.lane} small /> : <span className="row-placeholder">—</span>}</span>
       <span className="row-trailing"><span className="row-date">{build.date || `시연 ${index + 1}`}</span><span className="row-chevron">↗</span></span>
     </button>
+    {selected && <div className="build-expansion"><BuildDetail build={build} onDelete={onDelete} onNotify={onNotify} /></div>}
+    </div>
   );
 }
 
@@ -326,15 +328,19 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
     const secondaryKey = pickRandom(secondaryKeys, 1)[0];
     const primary = runes[primaryKey];
     const secondaryPathInfo = runes[secondaryKey];
-    const primaryChoices = pickRandom(primary.primary, 3);
-    const secondaryChoices = pickRandom(secondaryPathInfo.primary, 2);
+    const primaryChoices = primary.primaryRows.map((row) => pickRandom(row, 1)[0]);
+    const secondaryRowIndexes = pickRandom([0, 1, 2], 2);
+    const secondaryChoices = secondaryRowIndexes.map((rowIndex) => pickRandom(secondaryPathInfo.primaryRows[rowIndex], 1)[0]);
     const chosenShards = shardOptions.map((options) => pickRandom(options, 1)[0]);
     return [
       { field: "path", label: "주 룬 경로", pool: Object.keys(runes).map((key) => runes[key].name), value: primary.name, apply: () => setPath(primaryKey) },
       { field: "keystone", label: "핵심 룬", pool: primary.keystone, value: pickRandom(primary.keystone, 1)[0], apply: (value) => setKeystone(value) },
-      ...primaryChoices.map((value) => ({ field: "primaryRune", label: "주 룬", pool: primary.primary, value, apply: (picked) => setPrimaryRunes((current) => [...current, picked]) })),
+      ...primaryChoices.map((value, rowIndex) => ({ field: `primaryRune${rowIndex}`, label: `주 룬 ${rowIndex + 1}행`, pool: primary.primaryRows[rowIndex], value, apply: (picked) => setPrimaryRunes((current) => [...current, picked]) })),
       { field: "secondaryPath", label: "보조 룬 경로", pool: secondaryKeys.map((key) => runes[key].name), value: secondaryPathInfo.name, apply: () => setSecondary(secondaryKey) },
-      ...secondaryChoices.map((value) => ({ field: "secondaryRune", label: "보조 룬", pool: secondaryPathInfo.primary, value, apply: (picked) => setSecondaryRunes((current) => [...current, picked]) })),
+      ...secondaryChoices.map((value, index) => {
+        const rowIndex = secondaryRowIndexes[index];
+        return { field: `secondaryRune${rowIndex}`, label: `보조 룬 ${rowIndex + 1}행`, pool: secondaryPathInfo.primaryRows[rowIndex], value, apply: (picked) => setSecondaryRunes((current) => [...current, picked]) };
+      }),
       ...chosenShards.map((value, index) => ({ field: `shard${index}`, label: `${["공격", "유연", "방어"][index]} 파편`, pool: shardOptions[index], value, apply: (picked) => setShards((current) => { const next = [...current]; next[index] = picked; return next; }) })),
     ];
   }
@@ -466,12 +472,12 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
             </div>
             <div className="picker-section">
               <div className="picker-title"><span className="step-number">03</span><div><strong>주 룬 선택</strong><small>PRIMARY RUNES <em>{primaryRunes.length}/3</em></small></div></div>
-              <div className="option-grid">{primaryPath ? primaryPath.primary.map((rune) => <OptionChip key={rune} label={rune} selected={primaryRunes.includes(rune)} rolling={currentRoll?.field === "primaryRune" && currentRoll.value === rune && !currentRoll.settled} color={primaryPath.color} />) : <div className="picker-empty">챔피언 추첨 후 자동으로 선택됩니다</div>}</div>
+              <RuneOptions rows={primaryPath?.primaryRows} selections={primaryRunes} currentRoll={currentRoll} fieldPrefix="primaryRune" color={primaryPath?.color} />
             </div>
             <RunePicker title="보조 룬 경로" subtitle="SECONDARY PATH" paths={Object.keys(runes)} selected={secondary} currentRoll={currentRoll} rollField="secondaryPath" excluded={path} />
             <div className="picker-section">
               <div className="picker-title"><span className="step-number">04</span><div><strong>보조 룬 선택</strong><small>SECONDARY RUNES <em>{secondaryRunes.length}/2</em></small></div></div>
-              <div className="option-grid">{secondaryPath ? secondaryPath.primary.map((rune) => <OptionChip key={rune} label={rune} selected={secondaryRunes.includes(rune)} rolling={currentRoll?.field === "secondaryRune" && currentRoll.value === rune && !currentRoll.settled} color={secondaryPath.color} />) : <div className="picker-empty">보조 룬 경로가 자동으로 선택됩니다</div>}</div>
+              <RuneOptions rows={secondaryPath?.primaryRows} selections={secondaryRunes} currentRoll={currentRoll} fieldPrefix="secondaryRune" color={secondaryPath?.color} />
             </div>
             <div className="picker-section shards-section">
               <div className="picker-title"><span className="step-number">05</span><div><strong>룬 파편</strong><small>SHARDS <em>{shards.filter(Boolean).length}/3</em></small></div></div>
@@ -482,7 +488,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
         </div>
       </div>
       <div className="roulette-footer">
-        <button className={`button quiet-button ${spinning ? "skip-button" : ""}`} onClick={spinning ? skipRoll : rerollRunes} disabled={!spinning && !champion}>{spinning ? "Ⅱ" : "✦"} <span>{spinning ? "스킵" : champion ? "룬 다시 돌리기" : "아무 룬"}</span></button>
+        {(spinning || champion) && <button className={`button quiet-button ${spinning ? "skip-button" : ""}`} onClick={spinning ? skipRoll : rerollRunes} disabled={!spinning && !champion}>{spinning ? "Ⅱ" : "✦"} <span>{spinning ? "스킵" : "룬 다시 돌리기"}</span></button>}
         <div className="footer-actions"><button className="button text-button" onClick={onCancel}>취소</button><button className="button primary complete-button" disabled={!complete || saving} onClick={save}>{saving ? "저장 중…" : "완성!"}<span>↗</span></button></div>
       </div>
     </section>
@@ -504,8 +510,36 @@ function RunePicker({ title, subtitle, paths, selected, currentRoll, rollField, 
   );
 }
 
-function OptionChip({ label, selected, rolling = false, color }) {
-  return <span className={`option-chip ${selected ? "chosen" : ""} ${rolling ? "rolling" : ""}`} style={{ "--rune-color": color }}><i>{selected ? "✓" : "✦"}</i>{label}</span>;
+function OptionChip({ label, selected, rolling = false, color, dimmed = false }) {
+  return <span className={`option-chip ${selected ? "chosen" : ""} ${rolling ? "rolling" : ""} ${dimmed ? "dimmed" : ""}`} style={{ "--rune-color": color }}><i>{selected ? "✓" : "✦"}</i>{label}</span>;
+}
+
+function RuneOptions({ rows, selections, currentRoll, fieldPrefix, color }) {
+  if (!rows) return <div className="picker-empty">챔피언 추첨 후 자동으로 선택됩니다</div>;
+  return (
+    <div className="rune-option-rows">
+      {rows.map((row, rowIndex) => {
+        const selectedRow = row.some((rune) => selections.includes(rune));
+        return (
+          <div className="rune-option-row" key={`${fieldPrefix}-${rowIndex}`}>
+            <span className="rune-row-number">{rowIndex + 1}</span>
+            <div className="option-grid">
+              {row.map((rune) => (
+                <OptionChip
+                  key={rune}
+                  label={rune}
+                  selected={selections.includes(rune)}
+                  rolling={currentRoll?.field === `${fieldPrefix}${rowIndex}` && currentRoll.value === rune && !currentRoll.settled}
+                  color={color}
+                  dimmed={selectedRow && !selections.includes(rune)}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function FinalBuild({ champion, previewChamp, path, secondary, keystone, primaryRunes, secondaryRunes, shards, lane, onLaneChange }) {
