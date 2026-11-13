@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useState } from "react";
 import championRoster from "./data/champions.json";
 
+const BUILDS_PAGE_SIZE = 10;
+
 const featuredChampions = [
   { id: "Jinx", name: "징크스", title: "난폭한 말괄량이", accent: "#fc7190", role: "ADC" },
   { id: "Ahri", name: "아리", title: "구미호", accent: "#c58cff", role: "MID" },
@@ -95,6 +97,7 @@ function persistBuilds(builds) {
 
 function App() {
   const [builds, setBuilds] = useState(loadBuilds);
+  const [visibleBuildCount, setVisibleBuildCount] = useState(BUILDS_PAGE_SIZE);
   const [selectedId, setSelectedId] = useState(builds[0]?.id ?? null);
   const [page, setPage] = useState("home");
   const [darkMode, setDarkMode] = useState(false);
@@ -121,12 +124,16 @@ function App() {
     if (!window.confirm("이 빌드를 삭제할까요? 삭제한 빌드는 복구할 수 없습니다.")) return;
     const next = builds.filter((build) => build.id !== id);
     const saved = updateBuilds(next, "빌드를 삭제했습니다.");
-    if (saved) setSelectedId(next[0]?.id ?? null);
+    if (saved) {
+      setSelectedId(next[0]?.id ?? null);
+      if (!next.length) setVisibleBuildCount(BUILDS_PAGE_SIZE);
+    }
   }
 
   function addBuild(build) {
     const next = [build, ...builds];
     if (updateBuilds(next, "새 빌드를 보관함에 저장했습니다.")) {
+      setVisibleBuildCount(BUILDS_PAGE_SIZE);
       setSelectedId(build.id);
       setPage("home");
     }
@@ -148,11 +155,13 @@ function App() {
         {page === "home" ? (
           <HomePage
             builds={builds}
+            visibleBuildCount={visibleBuildCount}
             selectedBuild={selectedBuild}
             selectedId={selectedId}
             setSelectedId={setSelectedId}
             onDelete={deleteBuild}
             onCreate={() => setPage("roulette")}
+            onShowMore={() => setVisibleBuildCount((count) => count + BUILDS_PAGE_SIZE)}
             onNotify={notify}
           />
         ) : (
@@ -172,7 +181,7 @@ function Header({ page, setPage, darkMode, setDarkMode }) {
   return (
     <header className="topbar">
       <button className="brand" onClick={() => setPage("home")} aria-label="All Random Challenge 메인 화면">
-        <img className="brand-icon" src="/arc-icon.png" alt="" />
+        <img className="brand-icon" src={`${import.meta.env.BASE_URL}arc-icon.png`} alt="" />
         <span className="brand-copy"><strong>All Random Challenge</strong></span>
       </button>
       {page === "roulette" && <button className="nav-link active back-link" onClick={() => setPage("home")}>← 빌드</button>}
@@ -183,7 +192,10 @@ function Header({ page, setPage, darkMode, setDarkMode }) {
   );
 }
 
-function HomePage({ builds, selectedBuild, selectedId, setSelectedId, onDelete, onCreate, onNotify }) {
+function HomePage({ builds, visibleBuildCount, selectedBuild, selectedId, setSelectedId, onDelete, onCreate, onShowMore, onNotify }) {
+  const visibleBuilds = builds.slice(0, visibleBuildCount);
+  const remainingCount = builds.length - visibleBuilds.length;
+
   return (
     <>
       {!builds.length && (
@@ -198,7 +210,7 @@ function HomePage({ builds, selectedBuild, selectedId, setSelectedId, onDelete, 
         {builds.length ? (
           <div className="build-list">
             <div className="list-head"><span>챔피언 / 룬</span><span>스킬 마스터리</span><span>라인</span><span /></div>
-            {builds.map((build, index) => (
+            {visibleBuilds.map((build, index) => (
               <BuildRow
                 key={build.id}
                 build={build}
@@ -211,6 +223,11 @@ function HomePage({ builds, selectedBuild, selectedId, setSelectedId, onDelete, 
             ))}
           </div>
         ) : <div className="list-empty">저장된 빌드가 없습니다.</div>}
+        {remainingCount > 0 && (
+          <button className="button load-more" onClick={onShowMore}>
+            더보기 <span>{Math.min(BUILDS_PAGE_SIZE, remainingCount)}개 더</span>
+          </button>
+        )}
       </section>
       <button className="floating-add" onClick={onCreate} aria-label="새 룰렛 빌드 추가" title="새 빌드 만들기"><span>+</span><small>새 빌드</small></button>
     </>
