@@ -13,6 +13,7 @@
   --muted: #8d96a8;
   --muted-light: #b6bdc9;
   --line: #e9ecf2;
+  --brand-icon-border: #111;
   --violet: #174b8f;
   --violet-dark: #10396f;
   --violet-soft: #eaf2fc;
@@ -24,14 +25,14 @@ body { margin: 0; min-width: 360px; min-height: 100vh; }
 button { font: inherit; }
 button:focus-visible { outline: 3px solid color-mix(in srgb, var(--violet) 38%, transparent); outline-offset: 3px; }
 .app { min-height: 100vh; color: var(--ink); background: var(--page); transition: background .2s, color .2s; }
-.app.dark { --page: #121316; --surface: #1a1b20; --surface-soft: #212126; --ink: #f1eff0; --muted: #aba3a6; --muted-light: #746b70; --line: #353035; --violet: #e74758; --violet-dark: #c93446; --violet-soft: #351f24; --shadow: 0 14px 40px rgba(0, 0, 0, .3); }
+.app.dark { --page: #121316; --surface: #1a1b20; --surface-soft: #212126; --ink: #f1eff0; --muted: #aba3a6; --muted-light: #746b70; --line: #353035; --brand-icon-border: #fff; --violet: #e74758; --violet-dark: #c93446; --violet-soft: #351f24; --shadow: 0 14px 40px rgba(0, 0, 0, .3); }
 .app.dark .brand-mark span { background: var(--violet); }
 .app.dark .brand-mark { border-color: var(--violet); }
 .app.dark .skill-step.first { border-color: #9e3d49; }
 .app.dark .row-skill.active { border-color: #9e3d49; }
 .topbar { height: 76px; padding: 0 max(36px, calc((100vw - 1300px)/2)); display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-bottom: 1px solid var(--line); }
 .brand { display: flex; gap: 11px; align-items: center; border: 0; background: none; padding: 0; color: var(--ink); cursor: pointer; }
-.brand-icon { display: block; width: 40px; height: 40px; flex: 0 0 40px; object-fit: cover; border: 1px solid #111; border-radius: 50%; }
+.brand-icon { display: block; width: 40px; height: 40px; flex: 0 0 40px; object-fit: cover; border: 1px solid var(--brand-icon-border); border-radius: 50%; }
 .brand-mark { width: 35px; height: 35px; position: relative; display: flex; gap: 3px; align-items: center; justify-content: center; transform: skew(-12deg); border: 1.5px solid #174b8f; border-radius: 11px; background: var(--violet-soft); }
 .brand-mark span { display: block; width: 4px; background: #7967e0; border-radius: 4px; }
 .brand-mark span:nth-child(1) { height: 12px; opacity: .58; }.brand-mark span:nth-child(2) { height: 21px; }.brand-mark span:nth-child(3) { height: 16px; opacity: .78; }
@@ -100,6 +101,7 @@ button:focus-visible { outline: 3px solid color-mix(in srgb, var(--violet) 38%, 
 .shard-option { display: grid; place-items: center; cursor: default; }
 .path-option.rolling>span,.option-chip.rolling,.shard-option.rolling { transform: scale(1.13); box-shadow: 0 0 0 4px color-mix(in srgb, var(--violet) 15%, transparent); }
 .path-option.rolling>span,.shard-option.rolling { border-color: var(--violet); color: var(--violet); }
+.lane-pill.rolling { border-color: var(--violet); background: var(--violet-soft); box-shadow: 0 0 0 4px color-mix(in srgb, var(--violet) 15%, transparent); transform: scale(1.13); }
 .option-chip.rolling { color: var(--ink); border-color: var(--violet); background: var(--violet-soft); }
 .option-chip.dimmed { opacity: .38; }
 .rune-option-rows { display: grid; gap: 5px; }
@@ -109,5 +111,105 @@ button:focus-visible { outline: 3px solid color-mix(in srgb, var(--violet) 38%, 
 .skip-button { color: var(--violet); background: var(--violet-soft); }
 .skip-button:hover { background: color-mix(in srgb, var(--violet) 16%, var(--surface)); }
 .app.dark .item-step i { background: var(--violet-dark); }
-.app.dark .brand-icon { border-color: #fff; }
 @keyframes expand-build { from { opacity: .4; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+.roulette-main {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(270px, 1fr);
+  grid-template-areas: "spinner results" "runes results";
+  gap: 14px;
+  align-items: stretch;
+}
+.spinner-panel {
+  grid-area: spinner;
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--surface-soft), var(--surface));
+}
+.spinner-track {
+  min-height: 175px;
+  margin-top: 12px;
+  padding: 22px 10px 42px;
+}
+.spinner-pointer { top: 2px; }
+.spinner-champion.center { width: clamp(88px, 8vw, 108px); height: clamp(88px, 8vw, 108px); }
+.rune-editor {
+  grid-area: runes;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+.keystone-panel {
+  display: grid;
+  grid-template-columns: minmax(90px, .25fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  border-left: 3px solid var(--violet);
+  background: linear-gradient(90deg, var(--violet-soft), var(--surface) 36%);
+}
+.rune-result-heading { display: grid; gap: 5px; }
+.rune-result-heading .section-kicker { font-size: 8px; }
+.rune-result-heading strong { font-size: 13px; }
+.rune-core-picker { min-width: 0; }
+.rune-core-picker .picker-title { margin-bottom: 8px; }
+.keystone-panel .option-chip { min-height: 34px; font-size: 9px; }
+.rune-editor-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 12px;
+  min-width: 0;
+}
+.primary-runes-panel,.secondary-runes-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.path-picker {
+  min-width: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.rune-list-section { min-width: 0; }
+.rune-list-section .picker-title { margin-bottom: 9px; }
+.shards-section {
+  margin-top: auto;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+.final-panel {
+  grid-area: results;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  height: 100%;
+  padding: 17px;
+}
+.final-lane-section { margin-top: auto; }
+
+@media (max-width: 900px) {
+  .roulette-main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "spinner" "runes" "results";
+  }
+  .final-panel { height: auto; }
+  .final-lane-section { margin-top: 0; }
+}
+
+@media (max-width: 680px) {
+  .roulette-main { gap: 10px; }
+  .spinner-panel { padding: 14px 12px; }
+  .spinner-track { min-height: 145px; padding: 18px 0 42px; }
+  .rune-editor,.rune-editor-columns { gap: 9px; }
+  .rune-editor-columns { grid-template-columns: minmax(0, 1fr); }
+  .keystone-panel { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px; }
+  .rune-result-heading { display: flex; align-items: baseline; gap: 8px; }
+  .primary-runes-panel,.secondary-runes-panel { gap: 11px; }
+  .path-picker { padding-bottom: 10px; }
+  .final-panel { padding: 12px; }
+}

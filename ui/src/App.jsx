@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
+import championRoster from "./data/champions.json";
 
-const champions = [
+const featuredChampions = [
   { id: "Jinx", name: "징크스", title: "난폭한 말괄량이", accent: "#fc7190", role: "ADC" },
   { id: "Ahri", name: "아리", title: "구미호", accent: "#c58cff", role: "MID" },
   { id: "Morgana", name: "모르가나", title: "타락한 자", accent: "#9b8cff", role: "SUP" },
@@ -11,29 +12,42 @@ const champions = [
   { id: "Garen", name: "가렌", title: "데마시아의 힘", accent: "#77a7e8", role: "TOP" },
 ];
 
+const featuredChampionsById = new Map(featuredChampions.map((champion) => [champion.id, champion]));
+const champions = championRoster.map(([gameId, alias, name]) => {
+  const id = alias === "Kaisa" ? "KaiSa" : alias;
+  const featured = featuredChampionsById.get(id);
+  return {
+    id,
+    gameId,
+    name,
+    title: featured?.title ?? "",
+    accent: featured?.accent ?? "#7d92c8",
+  };
+});
+
 const runes = {
-  precision: { name: "정밀", mark: "✦", color: "#e9c34e", keystone: ["정복자", "기민한 발놀림", "집중 공격"], primaryRows: [["승전보", "침착"], ["과다치유", "최후의 일격"], ["최후의 저항", "체력차 극복"]] },
-  domination: { name: "지배", mark: "◈", color: "#d84b4b", keystone: ["감전", "어둠의 수확", "칼날비"], primaryRows: [["비열한 한 방", "피의 맛"], ["돌발 일격", "보물 사냥꾼"], ["궁극의 사냥꾼", "끈질긴 사냥꾼"]] },
-  sorcery: { name: "마법", mark: "✧", color: "#44a9d8", keystone: ["콩콩이 소환", "신비로운 유성", "난입"], primaryRows: [["마나순환 팔찌", "빛의 망토"], ["깨달음", "폭풍의 결집"], ["주문 작열", "물 위를 걷는 자"]] },
-  resolve: { name: "결의", mark: "⬟", color: "#4cbb91", keystone: ["착취의 손아귀", "여진", "수호자"], primaryRows: [["철거", "생명의 샘"], ["사전 준비", "과잉성장"], ["불굴의 의지", "재생의 바람"]] },
-  inspiration: { name: "영감", mark: "❋", color: "#69c6bc", keystone: ["빙결 강화", "봉인 풀린 주문서", "선제공격"], primaryRows: [["마법의 신발", "비스킷 배달"], ["우주적 통찰력", "미니언 해체분석기"], ["시간 왜곡 물약", "삼중 물약"]] },
+  precision: { name: "정밀", mark: "✦", color: "#e9c34e", keystone: ["집중 공격", "치명적 속도", "기민한 발놀림", "정복자"], primaryRows: [["생명 흡수", "승전보", "침착"], ["전설: 민첩함", "전설: 가속", "전설: 핏빛 길"], ["최후의 일격", "체력차 극복", "최후의 저항"]] },
+  domination: { name: "지배", mark: "◈", color: "#d84b4b", keystone: ["감전", "어둠의 수확", "칼날비"], primaryRows: [["비열한 한 방", "피의 맛", "돌발 일격"], ["육감", "섬뜩한 기념품", "깊은 와드"], ["보물 사냥꾼", "끈질긴 사냥꾼", "궁극의 사냥꾼"]] },
+  sorcery: { name: "마법", mark: "✧", color: "#44a9d8", keystone: ["콩콩이 소환", "신비로운 유성", "폭풍전사의 포효", "죽음불꽃 손길"], primaryRows: [["액시옴 비전 마법사", "마나순환 팔찌", "빛의 망토"], ["깨달음", "기민함", "절대 집중"], ["주문 작열", "물 위를 걷는 자", "폭풍의 결집"]] },
+  resolve: { name: "결의", mark: "⬟", color: "#4cbb91", keystone: ["착취의 손아귀", "여진", "수호자"], primaryRows: [["철거", "생명의 샘", "보호막 강타"], ["사전 준비", "재생의 바람", "뼈 방패"], ["과잉성장", "소생", "불굴의 의지"]] },
+  inspiration: { name: "영감", mark: "❋", color: "#69c6bc", keystone: ["빙결 강화", "봉인 풀린 주문서", "선제공격"], primaryRows: [["마법공학 점멸기", "마법의 신발", "환급"], ["삼중 물약", "시간 왜곡 물약", "비스킷 배달"], ["우주적 통찰력", "쾌속 접근", "다재다능"]] },
 };
 
 const shardOptions = [
-  ["공격 속도", "적응형 능력치", "스킬 가속"],
-  ["적응형 능력치", "이동 속도", "체력"],
-  ["체력", "강인함", "체력 증가"],
+  ["적응형 능력치", "공격 속도", "스킬 가속"],
+  ["적응형 능력치", "이동 속도", "체력 증가"],
+  ["체력", "강인함 및 둔화 저항", "체력 증가"],
 ];
 
 const seedBuilds = [
-  { id: "demo-1", champion: "Morgana", path: "sorcery", secondary: "inspiration", keystone: "콩콩이 소환", primaryRunes: ["마나순환 팔찌", "깨달음", "주문 작열"], secondaryRunes: ["비스킷 배달", "우주적 통찰력"], shards: ["공격 속도", "적응형 능력치", "체력"], skillOrder: ["W", "Q", "E", "W", "W", "R", "W", "Q"], items: [], lane: "SUP", date: "방금 전" },
-  { id: "demo-2", champion: "Ahri", path: "domination", secondary: "sorcery", keystone: "감전", primaryRunes: ["돌발 일격", "사냥의 증표", "궁극의 사냥꾼"], secondaryRunes: ["마나순환 팔찌", "깨달음"], shards: ["공격 속도", "적응형 능력치", "체력"], skillOrder: ["Q", "W", "E", "Q", "Q", "R", "Q", "W"], items: [], lane: "MID", date: "오늘 09:42" },
-  { id: "demo-3", champion: "Jinx", path: "precision", secondary: "inspiration", keystone: "기민한 발놀림", primaryRunes: ["침착", "최후의 일격", "체력차 극복"], secondaryRunes: ["마법의 신발", "비스킷 배달"], shards: ["공격 속도", "적응형 능력치", "체력"], skillOrder: ["Q", "W", "E", "Q", "Q", "R", "Q", "W"], items: [], lane: "ADC", date: "어제 21:18" },
+  { id: "demo-1", champion: "Morgana", path: "sorcery", secondary: "inspiration", keystone: "콩콩이 소환", primaryRunes: ["마나순환 팔찌", "깨달음", "주문 작열"], secondaryRunes: ["마법의 신발", "우주적 통찰력"], shards: ["공격 속도", "적응형 능력치", "체력"], skillOrder: ["W", "Q", "E", "W", "W", "R", "W", "Q"], items: [], lane: "SUP", date: "방금 전" },
+  { id: "demo-2", champion: "Ahri", path: "domination", secondary: "sorcery", keystone: "감전", primaryRunes: ["돌발 일격", "육감", "궁극의 사냥꾼"], secondaryRunes: ["마나순환 팔찌", "깨달음"], shards: ["공격 속도", "적응형 능력치", "체력"], skillOrder: ["Q", "W", "E", "Q", "Q", "R", "Q", "W"], items: [], lane: "MID", date: "오늘 09:42" },
+  { id: "demo-3", champion: "Jinx", path: "precision", secondary: "inspiration", keystone: "기민한 발놀림", primaryRunes: ["승전보", "전설: 민첩함", "체력차 극복"], secondaryRunes: ["마법의 신발", "비스킷 배달"], shards: ["공격 속도", "적응형 능력치", "체력"], skillOrder: ["Q", "W", "E", "Q", "Q", "R", "Q", "W"], items: [], lane: "ADC", date: "어제 21:18" },
   { id: "demo-4", champion: "Yasuo", path: "precision", secondary: "resolve", keystone: "정복자", primaryRunes: ["승전보", "최후의 일격", "체력차 극복"], secondaryRunes: ["재생의 바람", "과잉성장"], shards: ["공격 속도", "적응형 능력치", "체력"], skillOrder: ["Q", "E", "Q", "W", "Q", "R", "Q", "E"], items: [], lane: "MID", date: "어제 15:06" },
 ];
 
 const laneNames = { TOP: "탑", JUNGLE: "정글", MID: "미드", ADC: "바텀", SUP: "서포터" };
-const championDataUrl = (champion) => `https://ddragon.leagueoflegends.com/cdn/15.1.1/img/champion/${champion}.png`;
+const championDataUrl = (champion) => `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/ko_kr/v1/champion-icons/${champion.gameId}.png`;
 
 function pickRandom(values, count) {
   const shuffled = [...values];
@@ -51,7 +65,7 @@ function championInfo(id) {
 function ChampionImage({ champion, className = "" }) {
   return (
     <span className={`champion-image ${className}`} role="img" aria-label={`${champion.name} 챔피언 초상화`} style={{ "--champ-accent": champion.accent }}>
-      <img src={championDataUrl(champion.id)} alt="" onError={(event) => event.currentTarget.remove()} />
+      <img src={championDataUrl(champion)} alt="" onError={(event) => event.currentTarget.remove()} />
       <span aria-hidden="true">{champion.name.slice(0, 1)}</span>
     </span>
   );
@@ -122,13 +136,15 @@ function App() {
     <div className={darkMode ? "app dark" : "app"}>
       <Header page={page} setPage={setPage} darkMode={darkMode} setDarkMode={setDarkMode} />
       <main className="shell">
-        <div className="workspace-heading">
-          <div>
-            <div className="eyebrow"><span className="live-dot" /> YOUR RANDOM CHALLENGE</div>
-            <h1>{page === "home" ? "빌드" : "새로운 빌드 만들기"}</h1>
-            <p>{page === "home" ? "당신의 오늘의 행운은?" : "챔피언과 룬을 조합해 나만의 도전을 완성해 보세요."}</p>
+        {page === "home" && (
+          <div className="workspace-heading">
+            <div>
+              <div className="eyebrow"><span className="live-dot" /> YOUR RANDOM CHALLENGE</div>
+              <h1>빌드</h1>
+              <p>당신의 오늘의 행운은?</p>
+            </div>
           </div>
-        </div>
+        )}
         {page === "home" ? (
           <HomePage
             builds={builds}
@@ -225,7 +241,7 @@ function BuildDetail({ build, onDelete, onNotify }) {
         <div className="champion-showcase" style={{ "--champ-accent": champ.accent }}>
           <div className="champion-orbit" />
           <ChampionImage champion={champ} className="champion-portrait" />
-          <div className="champion-caption"><span>CHAMPION</span><strong>{champ.name}</strong><small>{champ.title}</small></div>
+          <div className="champion-caption"><span>CHAMPION</span><strong>{champ.name}</strong>{champ.title && <small>{champ.title}</small>}</div>
           <span className="champion-index">0{(champions.findIndex((item) => item.id === champ.id) + 1).toString()}</span>
         </div>
         <div className="rune-display">
@@ -320,7 +336,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
   const previewChamp = champion ? championInfo(champion) : champions[spinIndex % champions.length];
   const primaryPath = path ? runes[path] : null;
   const secondaryPath = secondary ? runes[secondary] : null;
-  const complete = champion && path && keystone && primaryRunes.length === 3 && secondary && secondaryRunes.length === 2 && shards.filter(Boolean).length === 3;
+  const complete = !spinning && champion && path && keystone && primaryRunes.length === 3 && secondary && secondaryRunes.length === 2 && shards.filter(Boolean).length === 3 && lane;
 
   function makeRuneSteps() {
     const primaryKey = pickRandom(Object.keys(runes), 1)[0];
@@ -332,6 +348,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
     const secondaryRowIndexes = pickRandom([0, 1, 2], 2);
     const secondaryChoices = secondaryRowIndexes.map((rowIndex) => pickRandom(secondaryPathInfo.primaryRows[rowIndex], 1)[0]);
     const chosenShards = shardOptions.map((options) => pickRandom(options, 1)[0]);
+    const chosenLane = pickRandom(Object.keys(laneNames), 1)[0];
     return [
       { field: "path", label: "주 룬 경로", pool: Object.keys(runes).map((key) => runes[key].name), value: primary.name, apply: () => setPath(primaryKey) },
       { field: "keystone", label: "핵심 룬", pool: primary.keystone, value: pickRandom(primary.keystone, 1)[0], apply: (value) => setKeystone(value) },
@@ -342,6 +359,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
         return { field: `secondaryRune${rowIndex}`, label: `보조 룬 ${rowIndex + 1}행`, pool: secondaryPathInfo.primaryRows[rowIndex], value, apply: (picked) => setSecondaryRunes((current) => [...current, picked]) };
       }),
       ...chosenShards.map((value, index) => ({ field: `shard${index}`, label: `${["공격", "유연", "방어"][index]} 파편`, pool: shardOptions[index], value, apply: (picked) => setShards((current) => { const next = [...current]; next[index] = picked; return next; }) })),
+      { field: "lane", label: "추천 라인", pool: Object.keys(laneNames), value: chosenLane, apply: (picked) => setLane(picked) },
     ];
   }
 
@@ -357,6 +375,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
     setPrimaryRunes([]);
     setSecondaryRunes([]);
     setShards(["", "", ""]);
+    setLane("");
     const steps = makeRuneSteps();
 
     for (let index = 0; index < steps.length; index += 1) {
@@ -396,6 +415,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
     setPrimaryRunes([]);
     setSecondaryRunes([]);
     setShards(["", "", ""]);
+    setLane("");
     skipRequested.current = false;
     const target = Math.floor(Math.random() * champions.length);
     for (let turn = 0; turn < 18; turn += 1) {
@@ -460,35 +480,42 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
                 return <div className={center ? "spinner-champion center" : "spinner-champion"} key={`${item.id}-${index}`}><ChampionImage champion={item} /><span>{item.name}</span></div>;
               })}
             </div>
-            <button className="button spin-button" onClick={spinChampion} disabled={spinning}>{spinning ? phase === "champion" ? "챔피언 추첨 중…" : "룬 추첨 중…" : champion ? "다시 뽑기" : "START!"}<span>↗</span></button>
+            <button className="button spin-button" onClick={spinChampion} disabled={spinning}>{spinning ? phase === "champion" ? "챔피언 추첨 중…" : "룬·라인 추첨 중…" : champion ? "다시 뽑기" : "START!"}<span>↗</span></button>
           </div>
         </section>
         <div className="rune-editor">
-          <div className="rune-editor-main">
-            <RunePicker title="주 룬 경로" subtitle="PRIMARY PATH" paths={Object.keys(runes)} selected={path} currentRoll={currentRoll} rollField="path" />
-            <div className="picker-section">
+          <div className="picker-section keystone-panel">
+            <div className="rune-result-heading"><span className="section-kicker">RUNE RESULT</span><strong>룬 결과</strong></div>
+            <div className="rune-core-picker">
               <div className="picker-title"><span className="step-number">02</span><div><strong>핵심 룬</strong><small>KEYSTONE</small></div></div>
               <div className="option-grid keystone-grid">{primaryPath ? primaryPath.keystone.map((rune) => <OptionChip key={rune} label={rune} selected={rune === keystone} rolling={currentRoll?.field === "keystone" && currentRoll.value === rune && !currentRoll.settled} color={primaryPath.color} />) : <div className="picker-empty">챔피언 추첨 후 자동으로 선택됩니다</div>}</div>
             </div>
-            <div className="picker-section">
-              <div className="picker-title"><span className="step-number">03</span><div><strong>주 룬 선택</strong><small>PRIMARY RUNES <em>{primaryRunes.length}/3</em></small></div></div>
-              <RuneOptions rows={primaryPath?.primaryRows} selections={primaryRunes} currentRoll={currentRoll} fieldPrefix="primaryRune" color={primaryPath?.color} />
-            </div>
-            <RunePicker title="보조 룬 경로" subtitle="SECONDARY PATH" paths={Object.keys(runes)} selected={secondary} currentRoll={currentRoll} rollField="secondaryPath" excluded={path} />
-            <div className="picker-section">
-              <div className="picker-title"><span className="step-number">04</span><div><strong>보조 룬 선택</strong><small>SECONDARY RUNES <em>{secondaryRunes.length}/2</em></small></div></div>
-              <RuneOptions rows={secondaryPath?.primaryRows} selections={secondaryRunes} currentRoll={currentRoll} fieldPrefix="secondaryRune" color={secondaryPath?.color} />
-            </div>
-            <div className="picker-section shards-section">
-              <div className="picker-title"><span className="step-number">05</span><div><strong>룬 파편</strong><small>SHARDS <em>{shards.filter(Boolean).length}/3</em></small></div></div>
-              <div className="shard-slots">{["공격", "유연", "방어"].map((slot, index) => <div className="shard-slot" key={slot}><span>{slot}</span><div>{shardOptions[index].map((shard) => <span key={shard} className={`shard-option ${shards[index] === shard ? "chosen" : ""} ${currentRoll?.field === `shard${index}` && currentRoll.value === shard && !currentRoll.settled ? "rolling" : ""}`} title={shard}>{shard.slice(0, 1)}</span>)}</div>{shards[index] && <small>{shards[index]}</small>}</div>)}</div>
-            </div>
           </div>
-          <FinalBuild champion={champion} previewChamp={previewChamp} path={path} secondary={secondary} keystone={keystone} primaryRunes={primaryRunes} secondaryRunes={secondaryRunes} shards={shards} lane={lane} onLaneChange={setLane} />
+          <div className="rune-editor-columns">
+            <section className="picker-section primary-runes-panel">
+              <RunePicker title="주 룬 경로" subtitle="PRIMARY PATH" paths={Object.keys(runes)} selected={path} currentRoll={currentRoll} rollField="path" />
+              <div className="rune-list-section">
+                <div className="picker-title"><span className="step-number">03</span><div><strong>주 룬 선택</strong><small>PRIMARY RUNES <em>{primaryRunes.length}/3</em></small></div></div>
+                <RuneOptions rows={primaryPath?.primaryRows} selections={primaryRunes} currentRoll={currentRoll} fieldPrefix="primaryRune" color={primaryPath?.color} />
+              </div>
+            </section>
+            <section className="picker-section secondary-runes-panel">
+              <RunePicker title="보조 룬 경로" subtitle="SECONDARY PATH" paths={Object.keys(runes)} selected={secondary} currentRoll={currentRoll} rollField="secondaryPath" excluded={path} />
+              <div className="rune-list-section">
+                <div className="picker-title"><span className="step-number">04</span><div><strong>보조 룬 선택</strong><small>SECONDARY RUNES <em>{secondaryRunes.length}/2</em></small></div></div>
+                <RuneOptions rows={secondaryPath?.primaryRows} selections={secondaryRunes} currentRoll={currentRoll} fieldPrefix="secondaryRune" color={secondaryPath?.color} />
+              </div>
+              <div className="shards-section">
+                <div className="picker-title"><span className="step-number">05</span><div><strong>룬 파편</strong><small>SHARDS <em>{shards.filter(Boolean).length}/3</em></small></div></div>
+                <div className="shard-slots">{["공격", "유연", "방어"].map((slot, index) => <div className="shard-slot" key={slot}><span>{slot}</span><div>{shardOptions[index].map((shard) => <span key={shard} className={`shard-option ${shards[index] === shard ? "chosen" : ""} ${currentRoll?.field === `shard${index}` && currentRoll.value === shard && !currentRoll.settled ? "rolling" : ""}`} title={shard}>{shard.slice(0, 1)}</span>)}</div>{shards[index] && <small>{shards[index]}</small>}</div>)}</div>
+              </div>
+            </section>
+          </div>
         </div>
+        <FinalBuild champion={champion} previewChamp={previewChamp} path={path} secondary={secondary} keystone={keystone} primaryRunes={primaryRunes} secondaryRunes={secondaryRunes} shards={shards} lane={lane} currentRoll={currentRoll} onLaneChange={setLane} />
       </div>
       <div className="roulette-footer">
-        {(spinning || champion) && <button className={`button quiet-button ${spinning ? "skip-button" : ""}`} onClick={spinning ? skipRoll : rerollRunes} disabled={!spinning && !champion}>{spinning ? "Ⅱ" : "✦"} <span>{spinning ? "스킵" : "룬 다시 돌리기"}</span></button>}
+        {(spinning || champion) && <button className={`button quiet-button ${spinning ? "skip-button" : ""}`} onClick={spinning ? skipRoll : rerollRunes} disabled={!spinning && !champion}>{spinning ? "Ⅱ" : "✦"} <span>{spinning ? "스킵" : "룬·라인 다시 돌리기"}</span></button>}
         <div className="footer-actions"><button className="button text-button" onClick={onCancel}>취소</button><button className="button primary complete-button" disabled={!complete || saving} onClick={save}>{saving ? "저장 중…" : "완성!"}<span>↗</span></button></div>
       </div>
     </section>
@@ -497,7 +524,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
 
 function RunePicker({ title, subtitle, paths, selected, currentRoll, rollField, excluded }) {
   return (
-    <div className="picker-section path-picker">
+    <div className="path-picker">
       <div className="picker-title"><span className="step-number">✦</span><div><strong>{title}</strong><small>{subtitle}</small></div></div>
       <div className="path-options">{paths.map((path) => {
         const info = runes[path];
@@ -542,7 +569,7 @@ function RuneOptions({ rows, selections, currentRoll, fieldPrefix, color }) {
   );
 }
 
-function FinalBuild({ champion, previewChamp, path, secondary, keystone, primaryRunes, secondaryRunes, shards, lane, onLaneChange }) {
+function FinalBuild({ champion, previewChamp, path, secondary, keystone, primaryRunes, secondaryRunes, shards, lane, currentRoll, onLaneChange }) {
   const selections = useMemo(() => [
     { title: "주 룬", path, values: [keystone, ...primaryRunes] },
     { title: "보조 룬", path: secondary, values: secondaryRunes },
@@ -564,8 +591,12 @@ function FinalBuild({ champion, previewChamp, path, secondary, keystone, primary
           </div>
         </div>
       ))}
-      <div className="final-lane-section"><div className="final-rune-heading"><span>추천 라인</span><b>선택 사항</b></div><div className="lane-selectors">{Object.keys(laneNames).map((role) => <button className={lane === role ? "lane-pill chosen" : "lane-pill"} key={role} title={laneNames[role]} aria-label={`${laneNames[role]} 라인 선택`} aria-pressed={lane === role} onClick={() => onLaneChange(lane === role ? "" : role)}><LaneMap lane={role} small /></button>)}</div></div>
-      <p className="final-note">선택한 룬은 오른쪽 슬롯에 바로 반영됩니다.</p>
+      <div className="final-lane-section"><div className="final-rune-heading"><span>추천 라인</span><b>랜덤 추첨</b></div><div className="lane-selectors">{Object.keys(laneNames).map((role) => {
+        const selected = lane === role;
+        const rolling = currentRoll?.field === "lane" && currentRoll.value === role && !currentRoll.settled;
+        return <button className={`lane-pill ${selected ? "chosen" : ""} ${rolling ? "rolling" : ""}`} key={role} title={laneNames[role]} aria-label={`${laneNames[role]} 라인 선택`} aria-pressed={selected} onClick={() => onLaneChange(role)}><LaneMap lane={role} small /></button>;
+      })}</div></div>
+      <p className="final-note">추첨된 룬과 라인은 오른쪽에 바로 반영됩니다.</p>
     </aside>
   );
 }
