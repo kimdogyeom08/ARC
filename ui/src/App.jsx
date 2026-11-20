@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { API_CONFIGURED, apiRequest } from "./api";
 import championRoster from "./data/champions.json";
 import runeIcons from "./data/runeIcons.json";
 
@@ -105,14 +106,54 @@ function persistBuilds(builds) {
 }
 
 function App() {
-  const [builds, setBuilds] = useState(loadBuilds);
+  const [builds, setBuilds] = useState(() => API_CONFIGURED ? [] : loadBuilds());
   const [visibleBuildCount, setVisibleBuildCount] = useState(BUILDS_PAGE_SIZE);
   const [selectedId, setSelectedId] = useState(builds[0]?.id ?? null);
   const [page, setPage] = useState("home");
   const [darkMode, setDarkMode] = useState(false);
   const [toast, setToast] = useState("");
+  const [authToken, setAuthToken] = useState(() => API_CONFIGURED ? window.localStorage.getItem("arc-auth-token") : null);
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(() => API_CONFIGURED && Boolean(window.localStorage.getItem("arc-auth-token")));
+  const [authError, setAuthError] = useState("");
 
   const selectedBuild = builds.find((build) => build.id === selectedId) ?? builds[0] ?? null;
+
+  useEffect(() => {
+    if (!API_CONFIGURED || !authToken) {
+      setAuthLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+    setAuthLoading(true);
+    setAuthError("");
+    async function loadAccount() {
+      try {
+        const user = await apiRequest("/auth/me", { token: authToken });
+        const savedBuilds = await apiRequest("/builds", { token: authToken });
+        if (!active) return;
+        setAuthUser(user);
+        setBuilds(savedBuilds);
+        setSelectedId(savedBuilds[0]?.id ?? null);
+      } catch (error) {
+        if (!active) return;
+        if (error.status === 401) {
+          window.localStorage.removeItem("arc-auth-token");
+          setAuthToken(null);
+          setAuthUser(null);
+          setBuilds([]);
+          setSelectedId(null);
+        } else {
+          setAuthError(error.message);
+        }
+      } finally {
+        if (active) setAuthLoading(false);
+      }
+    }
+    loadAccount();
+    return () => { active = false; };
+  }, [authToken]);
 
   function updateBuilds(nextBuilds, message) {
     setBuilds(nextBuilds);
@@ -129,17 +170,64 @@ function App() {
     window.setTimeout(() => setToast(""), 2600);
   }
 
-  function deleteBuild(id) {
+  async function authenticate({ username, password, mode }) {
+    const result = await apiRequest(`/auth/${mode}`, {
+      method: "POST",
+      body: { username, password },
+    });
+    window.localStorage.setItem("arc-auth-token", result.token);
+    setAuthError("");
+    setAuthLoading(true);
+    setAuthUser(result.user);
+    setAuthToken(result.token);
+  }
+
+  function logout() {
+    window.localStorage.removeItem("arc-auth-token");
+    setAuthToken(null);
+    setAuthUser(null);
+    setAuthError("");
+    setBuilds([]);
+    setSelectedId(null);
+    setPage("home");
+  }
+
+  async function deleteBuild(id) {
     if (!window.confirm("이 빌드를 삭제할까요? 삭제한 빌드는 복구할 수 없습니다.")) return;
-    const next = builds.filter((build) => build.id !== id);
-    const saved = updateBuilds(next, "빌드를 삭제했습니다.");
-    if (saved) {
+    try {
+      if (API_CONFIGURED) {
+        await apiRequest(`/builds/${encodeURIComponent(id)}`, { method: "DELETE", token: authToken });
+      }
+      const next = builds.filter((build) => build.id !== id);
+      if (API_CONFIGURED) {
+        setBuilds(next);
+        notify("빌드를 삭제했습니다.");
+      } else {
+        updateBuilds(next, "빌드를 삭제했습니다.");
+      }
       setSelectedId(next[0]?.id ?? null);
       if (!next.length) setVisibleBuildCount(BUILDS_PAGE_SIZE);
+    } catch (error) {
+      console.error("Could not delete ARC build", error);
+      notify(`빌드 삭제에 실패했습니다: ${error.message}`);
     }
   }
 
-  function addBuild(build) {
+  async function addBuild(build) {
+    if (API_CONFIGURED) {
+      const savedBuild = await apiRequest("/builds", {
+        method: "POST",
+        token: authToken,
+        body: build,
+      });
+      setBuilds((current) => [savedBuild, ...current]);
+      setVisibleBuildCount(BUILDS_PAGE_SIZE);
+      setSelectedId(savedBuild.id);
+      setPage("home");
+      notify("새 빌드를 계정에 저장했습니다.");
+      return;
+    }
+
     const next = [build, ...builds];
     if (updateBuilds(next, "새 빌드를 보관함에 저장했습니다.")) {
       setVisibleBuildCount(BUILDS_PAGE_SIZE);
@@ -150,43 +238,51 @@ function App() {
 
   return (
     <div className={darkMode ? "app dark" : "app"}>
-      <Header page={page} setPage={setPage} darkMode={darkMode} setDarkMode={setDarkMode} />
+      <Header page={page} setPage={setPage} darkMode={darkMode} setDarkMode={setDarkMode} authUser={authUser} onLogout={logout} />
       <main className="shell">
-        {page === "home" && (
-          <div className="workspace-heading">
-            <div>
-              <div className="eyebrow"><span className="live-dot" /> YOUR RANDOM CHALLENGE</div>
-              <h1>빌드</h1>
-              <p>당신의 오늘의 행운은?</p>
-            </div>
-          </div>
-        )}
-        {page === "home" ? (
-          <HomePage
-            builds={builds}
-            visibleBuildCount={visibleBuildCount}
-            selectedBuild={selectedBuild}
-            selectedId={selectedId}
-            setSelectedId={setSelectedId}
-            onDelete={deleteBuild}
-            onCreate={() => setPage("roulette")}
-            onShowMore={() => setVisibleBuildCount((count) => count + BUILDS_PAGE_SIZE)}
-            onNotify={notify}
-          />
+        {API_CONFIGURED && authLoading ? (
+          <section className="auth-screen"><div className="auth-card"><span className="section-kicker">ACCOUNT</span><h1>계정을 확인하고 있어요</h1></div></section>
+        ) : API_CONFIGURED && !authUser ? (
+          <AuthPage onAuthenticate={authenticate} error={authError} />
         ) : (
-          <RoulettePage onSave={addBuild} onCancel={() => setPage("home")} onNotify={notify} />
+          <>
+            {page === "home" && (
+              <div className="workspace-heading">
+                <div>
+                  <div className="eyebrow"><span className="live-dot" /> YOUR RANDOM CHALLENGE</div>
+                  <h1>빌드</h1>
+                  <p>당신의 오늘의 행운은?</p>
+                </div>
+              </div>
+            )}
+            {page === "home" ? (
+              <HomePage
+                builds={builds}
+                visibleBuildCount={visibleBuildCount}
+                selectedBuild={selectedBuild}
+                selectedId={selectedId}
+                setSelectedId={setSelectedId}
+                onDelete={deleteBuild}
+                onCreate={() => setPage("roulette")}
+                onShowMore={() => setVisibleBuildCount((count) => count + BUILDS_PAGE_SIZE)}
+                onNotify={notify}
+              />
+            ) : (
+              <RoulettePage onSave={addBuild} onCancel={() => setPage("home")} onNotify={notify} />
+            )}
+          </>
         )}
       </main>
       <footer className="footer">
         <span>ARC <span className="footer-separator">/</span> ALL RANDOM CHALLENGE</span>
-        <span>게임 데이터 및 빌드 저장 API는 다음 단계에서 연결됩니다.</span>
+        <span>{API_CONFIGURED ? `${authUser?.username || "계정"}의 빌드를 서버에 저장합니다.` : "빌드는 이 브라우저에만 저장됩니다."}</span>
       </footer>
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
   );
 }
 
-function Header({ page, setPage, darkMode, setDarkMode }) {
+function Header({ page, setPage, darkMode, setDarkMode, authUser, onLogout }) {
   return (
     <header className="topbar">
       <button className="brand" onClick={() => setPage("home")} aria-label="All Random Challenge 메인 화면">
@@ -194,10 +290,52 @@ function Header({ page, setPage, darkMode, setDarkMode }) {
         <span className="brand-copy"><strong>All Random Challenge</strong></span>
       </button>
       {page === "roulette" && <button className="nav-link active back-link" onClick={() => setPage("home")}>← 빌드</button>}
-      <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)} aria-label={darkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}>
-        <span>{darkMode ? "☼" : "☾"}</span><span className="theme-label">{darkMode ? "라이트 모드" : "다크 모드"}</span>
-      </button>
+      <div className="header-actions">
+        {authUser && <><span className="account-name">{authUser.username}</span><button className="logout-button" onClick={onLogout}>로그아웃</button></>}
+        <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)} aria-label={darkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}>
+          <span>{darkMode ? "☼" : "☾"}</span><span className="theme-label">{darkMode ? "라이트 모드" : "다크 모드"}</span>
+        </button>
+      </div>
     </header>
+  );
+}
+
+function AuthPage({ onAuthenticate, error: initialError }) {
+  const [mode, setMode] = useState("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(event) {
+    event.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await onAuthenticate({ username, password, mode });
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section className="auth-screen">
+      <form className="auth-card" onSubmit={submit}>
+        <span className="section-kicker">YOUR ACCOUNT</span>
+        <h1>{mode === "login" ? "로그인" : "계정 만들기"}</h1>
+        <p>계정별로 빌드를 저장해 다른 기기에서도 확인할 수 있어요.</p>
+        <label className="auth-field">이름<input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} minLength={2} maxLength={32} required /></label>
+        <label className="auth-field">비밀번호<input type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} minLength={mode === "register" ? 8 : undefined} maxLength={128} required /></label>
+        {(error || initialError) && <p className="auth-error" role="alert">{error || initialError}</p>}
+        <button className="button primary auth-submit" type="submit" disabled={submitting}>{submitting ? "처리 중…" : mode === "login" ? "로그인" : "가입하고 시작"}</button>
+        <button className="auth-mode-toggle" type="button" onClick={() => { setError(""); setMode(mode === "login" ? "register" : "login"); }}>
+          {mode === "login" ? "처음 방문하셨나요? 계정 만들기" : "이미 계정이 있나요? 로그인"}
+        </button>
+        <small className="auth-notice">이름은 중복될 수 없으며, 비밀번호는 8자 이상이어야 합니다. 비밀번호 찾기는 지원하지 않습니다.</small>
+      </form>
+    </section>
   );
 }
 
@@ -461,11 +599,11 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
     skipRequested.current = true;
   }
 
-  function save() {
+  async function save() {
     if (!complete || saving) return;
     setSaving(true);
     try {
-      onSave({
+      await onSave({
         id: `build-${Date.now()}`,
         champion,
         path,
@@ -481,7 +619,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
       });
     } catch (error) {
       console.error("Could not save roulette build", error);
-      onNotify("빌드 저장에 실패했습니다. 다시 시도해 주세요.");
+      onNotify(`빌드 저장에 실패했습니다: ${error.message}`);
     } finally {
       setSaving(false);
     }

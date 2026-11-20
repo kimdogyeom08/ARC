@@ -19,11 +19,11 @@ npm run dev
 - UI: http://localhost:5173
 - API 상태 확인: http://localhost:3001/api/health
 
-첫 화면은 UI 동작을 바로 확인할 수 있도록 시연 빌드를 표시합니다. 현재 UI 저장은 해당 브라우저의 `localStorage`에 기록되며, 다른 브라우저나 기기와 동기화되지 않습니다. Express/PostgreSQL API는 준비되어 있지만 현재 UI와 연결되어 있지 않습니다.
+첫 화면은 UI 동작을 바로 확인할 수 있도록 시연 빌드를 표시합니다. API 주소가 설정되지 않은 UI는 해당 브라우저의 `localStorage`에 저장하며, API 주소가 설정되면 이름·비밀번호 계정으로 로그인해 사용자별 빌드를 서버에 저장합니다. 계정 이름은 중복될 수 없고 비밀번호는 8자 이상입니다. 이메일 및 비밀번호 재설정 기능은 제공하지 않습니다.
 
 ## GitHub Pages 배포
 
-GitHub Pages에는 정적 UI만 배포됩니다. API 서버와 PostgreSQL은 GitHub Pages에서 실행되지 않으며, 배포된 UI의 빌드 저장은 브라우저별 `localStorage`를 사용합니다. 저장 데이터를 여러 기기에서 공유하려면 API와 데이터베이스를 별도로 호스팅하고 UI에 연결해야 합니다.
+GitHub Pages에는 정적 UI만 배포됩니다. API 서버와 PostgreSQL은 별도로 호스팅해야 합니다. 계정별 저장을 활성화하려면 API를 배포한 뒤 GitHub 저장소의 **Settings → Secrets and variables → Actions → Variables**에 `VITE_API_BASE_URL`을 추가하고 API의 HTTPS 기본 주소를 값으로 설정합니다. 이후 Pages 워크플로를 다시 실행합니다.
 
 1. 로컬에서 `npm run build`가 성공하는지 확인합니다.
 2. GitHub에서 새 저장소를 만듭니다. 이 로컬 저장소와 연결할 때는 원격 저장소에 README나 초기 커밋을 추가하지 않는 편이 간단합니다.
@@ -40,9 +40,13 @@ GitHub Pages에는 정적 UI만 배포됩니다. API 서버와 PostgreSQL은 Git
 
 ## PostgreSQL 연결 준비
 
-1. `server/.env.example`을 `server/.env`로 복사하고 `DATABASE_URL`을 설정합니다.
-2. `server/src/db/migrations/001_create_builds.sql`을 데이터베이스에 적용합니다.
-3. API는 `/api/builds`에서 조회·저장·삭제 요청을 제공합니다. DB 미설정 시 해당 API는 명시적으로 `503`을 반환합니다.
+1. PostgreSQL 데이터베이스를 만들고 `server/src/db/migrations/001_create_builds.sql`, `server/src/db/migrations/002_add_accounts_and_build_ownership.sql`을 순서대로 적용합니다.
+2. Express API를 `server` 폴더에서 배포하고 `DATABASE_URL`, 32바이트 이상의 무작위 `AUTH_SECRET`, `UI_ORIGIN=https://kimdogyeom08.github.io` 환경 변수를 설정합니다.
+3. API의 `/api/health`가 데이터베이스와 인증 설정을 확인하도록 테스트합니다.
+4. GitHub 저장소에 `VITE_API_BASE_URL` Actions 변수를 등록하고 Pages 배포를 다시 실행합니다. UI의 API 주소가 없으면 기존 브라우저별 저장 모드로 동작합니다.
+5. `/api/auth/register`에서 계정을 만들고 로그인한 뒤, `/api/builds` 조회·저장·삭제가 계정별로 분리되는지 확인합니다.
+
+새 계정 생성은 공개 사이트에서 누구나 할 수 있습니다. 비밀번호 원문은 저장하지 않으며, 기존 브라우저 `localStorage` 빌드는 계정에 자동 이전되지 않습니다.
 
 ## 현재 화면
 
