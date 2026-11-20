@@ -50,5 +50,7 @@ GitHub Pages에는 정적 UI만 배포됩니다. API 서버와 PostgreSQL은 Git
 - 룰렛: 챔피언·룬·라인 무작위 추첨, 오른쪽 결과 미리보기, 빌드 저장
 - 다크 모드 및 좁은 화면 레이아웃
 
-챔피언 초상화는 Riot Data Dragon 이미지 URL을 사용합니다. 추천 스킬·아이템 데이터는 아직 임의로 채우지 않으며 비워 둡니다.
+챔피언 초상화는 최신 CommunityDragon CDN 이미지에서 받은 로컬 정적 파일(`ui/public/champions/`)을 사용하므로 앱 표시 시 외부 이미지 서버를 호출하지 않습니다. 추천 스킬·아이템 데이터는 아직 임의로 채우지 않으며 비워 둡니다.
 챔피언 로스터, 룬 경로, 선택지, 파편은 CommunityDragon의 최신 한국어 게임 데이터(`champion-summary.json`, `perkstyles.json`, `perks.json`)를 기준으로 관리합니다.
+룬 경로·룬·파편 아이콘도 CommunityDragon 이미지에서 받은 로컬 정적 파일(`ui/public/runes/`)로 제공하며, 이름과 이미지 ID 연결은 `ui/src/data/runeIcons.json`에 있습니다.
+라인 아이콘은 CommunityDragon의 최신 포지션 SVG를 `ui/public/lanes/`에 로컬로 포함해 사용합니다.

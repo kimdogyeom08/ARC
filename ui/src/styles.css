@@ -228,3 +228,67 @@ button:focus-visible { outline: 3px solid color-mix(in srgb, var(--violet) 38%, 
 }
 .load-more span { color: var(--muted); font-size: 9px; font-weight: 500; }
 .load-more:hover { border-color: var(--violet); background: var(--violet-soft); }
+
+.spinner-champion {
+  width: auto;
+  height: auto;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.spinner-champion>.champion-image {
+  width: clamp(72px, 5.8vw, 86px);
+  height: clamp(72px, 5.8vw, 86px);
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+.spinner-champion>.champion-image>img {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.spinner-champion.center {
+  width: auto;
+  height: auto;
+}
+.spinner-champion.center>.champion-image {
+  width: clamp(116px, 9vw, 136px);
+  height: clamp(116px, 9vw, 136px);
+  border: 4px solid var(--violet);
+  box-shadow: 0 0 0 6px var(--violet-soft), 0 7px 23px rgba(23, 75, 143, .2);
+}
+.spinner-champion.center>.champion-image>img { border: 0; }
+
+@media (max-width: 680px) {
+  .spinner-champion>.champion-image {
+    width: 50px;
+    height: 50px;
+  }
+  .spinner-champion.center>.champion-image {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+.rune-emblem { overflow: hidden; padding: 2px; background: color-mix(in srgb, var(--rune-color) 10%, var(--surface)); }
+.rune-emblem>img,.keystone-rune>span>img,.rune-choice i>img,.path-option>span>img,.option-rune-icon,.shard-icon,.final-rune-heading b>img,.final-rune-icon { display: block; object-fit: contain; }
+.rune-emblem>img { width: 100%; height: 100%; }
+.keystone-rune>span { overflow: hidden; padding: 5px; }
+.keystone-rune>span>img,.rune-choice i>img,.path-option>span>img { width: 100%; height: 100%; }
+.rune-choice i { overflow: hidden; padding: 2px; }
+.path-option>span { overflow: hidden; padding: 4px; }
+.option-rune-icon { width: 17px; height: 17px; flex: 0 0 17px; }
+.shard-option { display: grid; place-items: center; overflow: hidden; padding: 2px; }
+.shard-icon { width: 100%; height: 100%; }
+.final-rune-heading b { display: flex; align-items: center; gap: 4px; }
+.final-rune-heading b>img { width: 14px; height: 14px; }
+.final-rune-slot.filled { gap: 4px; }
+.final-rune-icon { width: 15px; height: 15px; flex: 0 0 15px; }
+.lane-map img { width: 27px; height: 27px; object-fit: contain; }
+.lane-map.small img { width: 20px; height: 20px; }

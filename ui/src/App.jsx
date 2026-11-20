@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import championRoster from "./data/champions.json";
+import runeIcons from "./data/runeIcons.json";
 
 const BUILDS_PAGE_SIZE = 10;
 
@@ -49,7 +50,10 @@ const seedBuilds = [
 ];
 
 const laneNames = { TOP: "탑", JUNGLE: "정글", MID: "미드", ADC: "바텀", SUP: "서포터" };
-const championDataUrl = (champion) => `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/ko_kr/v1/champion-icons/${champion.gameId}.png`;
+const laneIconNames = { TOP: "top", JUNGLE: "jungle", MID: "middle", ADC: "bottom", SUP: "utility" };
+const championImageUrl = (champion) => `${import.meta.env.BASE_URL}champions/${champion.gameId}.png`;
+const runeImageUrl = (id) => `${import.meta.env.BASE_URL}runes/${id}.png`;
+const laneImageUrl = (lane) => `${import.meta.env.BASE_URL}lanes/position-${laneIconNames[lane] || "middle"}.svg`;
 
 function pickRandom(values, count) {
   const shuffled = [...values];
@@ -67,10 +71,15 @@ function championInfo(id) {
 function ChampionImage({ champion, className = "" }) {
   return (
     <span className={`champion-image ${className}`} role="img" aria-label={`${champion.name} 챔피언 초상화`} style={{ "--champ-accent": champion.accent }}>
-      <img src={championDataUrl(champion)} alt="" onError={(event) => event.currentTarget.remove()} />
+      <img src={championImageUrl(champion)} alt="" onError={(event) => event.currentTarget.remove()} />
       <span aria-hidden="true">{champion.name.slice(0, 1)}</span>
     </span>
   );
+}
+
+function RuneIcon({ id, className = "" }) {
+  if (!id) return null;
+  return <img className={className} src={runeImageUrl(id)} alt="" aria-hidden="true" />;
 }
 
 function loadBuilds() {
@@ -295,9 +304,9 @@ function RunePath({ path, keystone, choices = [], secondaryPath = false }) {
   const info = runes[path];
   return (
     <div className={secondaryPath ? "rune-path secondary-path" : "rune-path"}>
-      <div className="path-heading"><span className="rune-emblem" style={{ "--rune-color": info.color }}>{info.mark}</span><strong>{info.name}</strong><small>{secondaryPath ? "보조 룬" : "주 룬"}</small></div>
-      {!secondaryPath && <div className="keystone-rune" style={{ "--rune-color": info.color }}><span>{info.mark}</span><strong>{keystone}</strong></div>}
-      <div className="rune-choice-grid">{choices.map((rune, index) => <span className="rune-choice" key={`${rune}-${index}`} title={rune}><i style={{ "--rune-color": info.color }}>{index === 0 && !secondaryPath ? "✦" : "·"}</i><span>{rune}</span></span>)}</div>
+      <div className="path-heading"><span className="rune-emblem" style={{ "--rune-color": info.color }}><RuneIcon id={runeIcons.paths[path]} /></span><strong>{info.name}</strong><small>{secondaryPath ? "보조 룬" : "주 룬"}</small></div>
+      {!secondaryPath && <div className="keystone-rune" style={{ "--rune-color": info.color }}><span><RuneIcon id={runeIcons.perks[keystone]} /></span><strong>{keystone}</strong></div>}
+      <div className="rune-choice-grid">{choices.map((rune, index) => <span className="rune-choice" key={`${rune}-${index}`} title={rune}><i style={{ "--rune-color": info.color }}><RuneIcon id={runeIcons.perks[rune]} /></i><span>{rune}</span></span>)}</div>
     </div>
   );
 }
@@ -323,14 +332,9 @@ function BuildRow({ build, index, selected, onClick, onDelete, onNotify }) {
 }
 
 function LaneMap({ lane, small = false }) {
-  const points = { TOP: [10, 10], JUNGLE: [23, 24], MID: [24, 24], ADC: [37, 38], SUP: [37, 38] };
-  const [x, y] = points[lane] || [24, 24];
   return (
     <span className={small ? "lane-map small" : "lane-map"} title={laneNames[lane] || "라인"}>
-      <svg viewBox="0 0 48 48" role="img" aria-label={`${laneNames[lane] || "미지정"} 라인 아이콘`}>
-        <path className="map-path" d="M8 40 40 8M9 10h8v8M31 30h8v8M8 8h32v32H8z" />
-        <circle className="map-marker" cx={x} cy={y} r={small ? "4.5" : "5.5"} />
-      </svg>
+      <img src={laneImageUrl(lane)} alt={`${laneNames[lane] || "미지정"} 라인 아이콘`} />
     </span>
   );
 }
@@ -524,7 +528,7 @@ function RoulettePage({ onSave, onCancel, onNotify }) {
               </div>
               <div className="shards-section">
                 <div className="picker-title"><span className="step-number">05</span><div><strong>룬 파편</strong><small>SHARDS <em>{shards.filter(Boolean).length}/3</em></small></div></div>
-                <div className="shard-slots">{["공격", "유연", "방어"].map((slot, index) => <div className="shard-slot" key={slot}><span>{slot}</span><div>{shardOptions[index].map((shard) => <span key={shard} className={`shard-option ${shards[index] === shard ? "chosen" : ""} ${currentRoll?.field === `shard${index}` && currentRoll.value === shard && !currentRoll.settled ? "rolling" : ""}`} title={shard}>{shard.slice(0, 1)}</span>)}</div>{shards[index] && <small>{shards[index]}</small>}</div>)}</div>
+                <div className="shard-slots">{["공격", "유연", "방어"].map((slot, index) => <div className="shard-slot" key={slot}><span>{slot}</span><div>{shardOptions[index].map((shard) => <span key={shard} className={`shard-option ${shards[index] === shard ? "chosen" : ""} ${currentRoll?.field === `shard${index}` && currentRoll.value === shard && !currentRoll.settled ? "rolling" : ""}`} title={shard}>{runeIcons.perks[shard] ? <RuneIcon id={runeIcons.perks[shard]} className="shard-icon" /> : shard.slice(0, 1)}</span>)}</div>{shards[index] && <small>{shards[index]}</small>}</div>)}</div>
               </div>
             </section>
           </div>
@@ -548,14 +552,14 @@ function RunePicker({ title, subtitle, paths, selected, currentRoll, rollField, 
         const disabled = path === excluded;
         const isSelected = selected === path;
         const rolling = currentRoll?.field === rollField && currentRoll.value === info.name && !currentRoll.settled;
-        return <span key={path} className={`path-option ${isSelected ? "chosen" : ""} ${disabled || (selected && !isSelected) ? "dimmed" : ""} ${rolling ? "rolling" : ""}`} style={{ "--rune-color": info.color }}><span>{info.mark}</span><small>{info.name}</small></span>;
+        return <span key={path} className={`path-option ${isSelected ? "chosen" : ""} ${disabled || (selected && !isSelected) ? "dimmed" : ""} ${rolling ? "rolling" : ""}`} style={{ "--rune-color": info.color }}><span><RuneIcon id={runeIcons.paths[path]} /></span><small>{info.name}</small></span>;
       })}</div>
     </div>
   );
 }
 
 function OptionChip({ label, selected, rolling = false, color, dimmed = false }) {
-  return <span className={`option-chip ${selected ? "chosen" : ""} ${rolling ? "rolling" : ""} ${dimmed ? "dimmed" : ""}`} style={{ "--rune-color": color }}><i>{selected ? "✓" : "✦"}</i>{label}</span>;
+  return <span className={`option-chip ${selected ? "chosen" : ""} ${rolling ? "rolling" : ""} ${dimmed ? "dimmed" : ""}`} style={{ "--rune-color": color }}><RuneIcon id={runeIcons.perks[label]} className="option-rune-icon" />{label}</span>;
 }
 
 function RuneOptions({ rows, selections, currentRoll, fieldPrefix, color }) {
@@ -602,8 +606,8 @@ function FinalBuild({ champion, previewChamp, path, secondary, keystone, primary
       </div>
       {selections.map((section) => (
         <div className="final-rune-section" key={section.title}>
-          <div className="final-rune-heading"><span>{section.title}</span>{section.path && <b style={{ "--rune-color": runes[section.path].color }}>{runes[section.path].mark} {runes[section.path].name}</b>}</div>
-          <div className={`final-rune-slots ${section.title === "주 룬" ? "primary-slots" : ""}`}>{section.values.map((value, index) => <div className={value ? "final-rune-slot filled" : "final-rune-slot"} key={`${section.title}-${index}`}>{value ? <><i style={{ "--rune-color": section.path ? runes[section.path].color : "#9ba6b7" }}>{index === 0 && section.title === "주 룬" ? "✦" : "·"}</i><span>{value}</span></> : <span className="slot-empty" />}</div>)}
+          <div className="final-rune-heading"><span>{section.title}</span>{section.path && <b style={{ "--rune-color": runes[section.path].color }}><RuneIcon id={runeIcons.paths[section.path]} />{runes[section.path].name}</b>}</div>
+          <div className={`final-rune-slots ${section.title === "주 룬" ? "primary-slots" : ""}`}>{section.values.map((value, index) => <div className={value ? "final-rune-slot filled" : "final-rune-slot"} key={`${section.title}-${index}`}>{value ? <><RuneIcon id={runeIcons.perks[value]} className="final-rune-icon" /><span>{value}</span></> : <span className="slot-empty" />}</div>)}
             {section.title === "주 룬" && Array.from({ length: Math.max(0, 4 - section.values.length) }, (_, index) => <div className="final-rune-slot" key={`empty-${index}`}><span className="slot-empty" /></div>)}
           </div>
         </div>
