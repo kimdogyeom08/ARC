@@ -38,13 +38,16 @@ GitHub Pages에는 정적 UI만 배포됩니다. API 서버와 PostgreSQL은 별
 5. `main`에 푸시하면 `.github/workflows/deploy-pages.yml`이 UI를 빌드하고 Pages에 배포합니다. 저장소의 **Actions** 탭에서 작업이 완료됐는지 확인합니다.
 6. 사이트 주소는 `https://<OWNER>.github.io/<REPOSITORY>/` 형식입니다. 저장소 이름에 맞는 Vite 경로는 배포 워크플로가 설정합니다.
 
-## PostgreSQL 연결 준비
+## API 및 데이터베이스 배포 (Render + Neon)
 
-1. PostgreSQL 데이터베이스를 만들고 `server/src/db/migrations/001_create_builds.sql`, `server/src/db/migrations/002_add_accounts_and_build_ownership.sql`을 순서대로 적용합니다.
-2. Express API를 `server` 폴더에서 배포하고 `DATABASE_URL`, 32바이트 이상의 무작위 `AUTH_SECRET`, `UI_ORIGIN=https://kimdogyeom08.github.io` 환경 변수를 설정합니다.
-3. API의 `/api/health`가 데이터베이스와 인증 설정을 확인하도록 테스트합니다.
-4. GitHub 저장소에 `VITE_API_BASE_URL` Actions 변수를 등록하고 Pages 배포를 다시 실행합니다. UI의 API 주소가 없으면 기존 브라우저별 저장 모드로 동작합니다.
-5. `/api/auth/register`에서 계정을 만들고 로그인한 뒤, `/api/builds` 조회·저장·삭제가 계정별로 분리되는지 확인합니다.
+1. Neon에서 PostgreSQL 프로젝트를 만들고 **Connect**에서 pooled connection string을 복사합니다. 이 문자열은 비밀번호가 포함된 비밀 값이므로 공개 저장소나 채팅에 올리지 마세요.
+2. Render에서 **New → Blueprint**를 선택하고 이 저장소를 연결합니다. `render.yaml`이 API를 무료 웹 서비스로 설정하고, `AUTH_SECRET`을 생성하며, Neon 연결 문자열을 입력할 `DATABASE_URL` 항목을 요청합니다.
+3. Neon SQL Editor에서 `server/src/db/migrations/001_create_builds.sql`을 먼저, `server/src/db/migrations/002_add_accounts_and_build_ownership.sql`을 다음으로 실행합니다.
+4. Render 배포가 완료되면 `https://<Render 서비스 주소>/api/health`를 엽니다. JSON 응답의 `databaseConfigured`와 `authConfigured`가 모두 `true`인지 확인합니다.
+5. GitHub 저장소의 **Settings → Secrets and variables → Actions → Variables**에 `VITE_API_BASE_URL`을 추가하고 Render 서비스의 기본 HTTPS 주소를 입력합니다(`/api`는 붙이지 않습니다). Pages 워크플로를 다시 실행합니다.
+6. 공개 UI에서 계정을 만든 뒤 로그인하고, 빌드 저장·조회·삭제가 계정별로 분리되는지 확인합니다.
+
+API 주소가 설정되지 않은 UI는 기존 브라우저별 저장 모드로 동작합니다.
 
 새 계정 생성은 공개 사이트에서 누구나 할 수 있습니다. 비밀번호 원문은 저장하지 않으며, 기존 브라우저 `localStorage` 빌드는 계정에 자동 이전되지 않습니다.
 

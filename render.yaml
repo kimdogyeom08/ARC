@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: arc-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: UI_ORIGIN
+        value: https://kimdogyeom08.github.io
