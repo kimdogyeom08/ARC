@@ -1,13 +1,34 @@
-import "dotenv/config";
 import cors from "cors";
+import dotenv from "dotenv";
 import express from "express";
 import pg from "pg";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createSessionToken, hashPassword, isValidPassword, normalizeUsername, verifyPassword, verifySessionToken } from "./auth.js";
+
+dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env") });
 
 const { Pool } = pg;
 const app = express();
-const port = Number(process.env.PORT || 3001);
-const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : null;
+
+function readPort(name) {
+  const value = process.env[name];
+  if (value === undefined || value === "") return undefined;
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`${name} must be an integer between 1 and 65535.`);
+  }
+  return port;
+}
+
+const port = readPort("PORT") ?? 3001;
+const databasePort = readPort("DB_PORT");
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ...(databasePort === undefined ? {} : { port: databasePort }),
+    })
+  : null;
 const authSecret = process.env.AUTH_SECRET;
 
 app.use(cors({ origin: process.env.UI_ORIGIN || "http://localhost:5173" }));

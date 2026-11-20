@@ -13,11 +13,14 @@ React 화면과 Express API를 별도 앱으로 실행하는 개발 시작점입
 npm install
 npm install --prefix ui
 npm install --prefix server
+Copy-Item server\.env.example server\.env
 npm run dev
 ```
 
 - UI: http://localhost:5173
 - API 상태 확인: http://localhost:3001/api/health
+
+`server/.env`에서 API 포트는 `PORT`, PostgreSQL 포트는 `DB_PORT`로 설정합니다. `DATABASE_URL`에는 DB 호스트·계정·이름을 입력하고, `DB_PORT`는 URL의 포트를 덮어씁니다. `.env`는 Git에 커밋하지 마세요.
 
 첫 화면은 UI 동작을 바로 확인할 수 있도록 시연 빌드를 표시합니다. API 주소가 설정되지 않은 UI는 해당 브라우저의 `localStorage`에 저장하며, API 주소가 설정되면 이름·비밀번호 계정으로 로그인해 사용자별 빌드를 서버에 저장합니다. 계정 이름은 중복될 수 없고 비밀번호는 8자 이상입니다. 이메일 및 비밀번호 재설정 기능은 제공하지 않습니다.
 
@@ -38,7 +41,7 @@ GitHub Pages에는 정적 UI만 배포됩니다. API 서버와 PostgreSQL은 별
 5. `main`에 푸시하면 `.github/workflows/deploy-pages.yml`이 UI를 빌드하고 Pages에 배포합니다. 저장소의 **Actions** 탭에서 작업이 완료됐는지 확인합니다.
 6. 사이트 주소는 `https://<OWNER>.github.io/<REPOSITORY>/` 형식입니다. 저장소 이름에 맞는 Vite 경로는 배포 워크플로가 설정합니다.
 
-## API 및 데이터베이스 배포 (Render + Neon)
+## 선택 사항: API 및 데이터베이스 배포 (Render + Neon)
 
 1. Neon에서 PostgreSQL 프로젝트를 만들고 **Connect**에서 pooled connection string을 복사합니다. 이 문자열은 비밀번호가 포함된 비밀 값이므로 공개 저장소나 채팅에 올리지 마세요.
 2. Render에서 **New → Blueprint**를 선택하고 이 저장소를 연결합니다. `render.yaml`이 API를 무료 웹 서비스로 설정하고, `AUTH_SECRET`을 생성하며, Neon 연결 문자열을 입력할 `DATABASE_URL` 항목을 요청합니다.
